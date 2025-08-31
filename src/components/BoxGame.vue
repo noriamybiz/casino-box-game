@@ -9,7 +9,7 @@ update below to use the paymentResults being returned above
       <div class="led-text">TRY YOUR LUCK!</div>
     </div>
 
-    <div class="casino-header">
+    <!-- <div class="casino-header">
       <div class="online-players">
         <span class="dot"></span>
         <span>{{ onlinePlayers }} Online</span>
@@ -25,7 +25,55 @@ update below to use the paymentResults being returned above
           <span class="amount">${{ winner.amount }}</span>
         </div>
       </div>
+    </div> 
+
+    <h1 class="section-title">🎰 Casino Winner Announcements 🎰</h1>-->
+
+    <div class="casino-header">
+      <div class="winner-messages">
+        <div
+          v-for="(message, index) in winnerMessages"
+          :key="index"
+          :class="['winner-message', { active: currentMessageIndex === index }]"
+        >
+          <span class="winner-icon">🎉</span>
+          <span class="winner-name">{{ message.name }}</span> won
+          <span class="amount">${{ message.amount.toLocaleString() }}</span> on
+          <span class="game">{{ message.game }}</span
+          >!
+        </div>
+      </div>
+
+      <!--<div class="recent-winners">
+        <div
+          v-for="(winner, index) in recentWinners"
+          :key="index"
+          class="winner-item"
+        >
+          🎉 <strong class="winner-name">{{ winner.name }}</strong> won
+          <span class="amount">${{ winner.amount.toLocaleString() }}</span> on
+          <span class="game">{{ winner.game }}</span>
+        </div>
+      </div>-->
     </div>
+
+    <!--<div class="instructions">
+      <h3>How It Works</h3>
+      <ul>
+        <li>
+          The component displays rotating winner announcements instead of online
+          player count
+        </li>
+        <li>
+          Each message shows a different player name, amount won, and game
+        </li>
+        <li>Messages transition smoothly with fade animations</li>
+        <li>Recent winners are displayed on the right side</li>
+        <li>
+          Data is randomly generated but can be connected to a real backend
+        </li>
+      </ul>
+    </div> -->
 
     <div class="box-container" :class="{ disabled: isReshuffling }">
       <div
@@ -345,7 +393,7 @@ export default {
       boxValues: [], // Will be populated from server
       selectedBoxValue: 0,
       onlinePlayers: 0,
-      recentWinners: [],
+      recentWinnersz: [],
       isLoggedIn: true,
       showAuthModal: false,
       authStep: 1, // 1: Mobile input, 2: OTP input
@@ -361,6 +409,19 @@ export default {
       pendingBoxId: null, // Store the box ID that was clicked before auth
       isConnected: false,
       paymentError: "",
+      currentMessageIndex: 0,
+      winnerMessages: [
+        { name: "John D.", amount: 2450, game: "Slot Machine" },
+        { name: "Sarah M.", amount: 12500, game: "Poker" },
+        { name: "Mike T.", amount: 5200, game: "Roulette" },
+        { name: "Lisa K.", amount: 8700, game: "Blackjack" },
+        { name: "Alex R.", amount: 15600, game: "Baccarat" },
+      ],
+      recentWinners: [
+        { name: "Emma W.", amount: 3200, game: "Slots" },
+        { name: "David L.", amount: 8100, game: "Poker" },
+        { name: "Olivia P.", amount: 5400, game: "Roulette" },
+      ],
     };
   },
   computed: {
@@ -506,6 +567,13 @@ export default {
     this.addListener("chat", (payload) => {
       console.log("📩 New chat:", payload);
     });
+    // Start rotating messages
+    this.startMessageRotation();
+
+    // Simulate adding new winners occasionally
+    setInterval(() => {
+      this.addNewWinner();
+    }, 10000);
   },
 
   beforeUnmount() {
@@ -870,6 +938,41 @@ export default {
       };
       const audio = new Audio(sounds[type]);
       audio.play().catch((e) => console.log("Audio play failed:", e));
+    },
+    startMessageRotation() {
+      setInterval(() => {
+        this.currentMessageIndex =
+          (this.currentMessageIndex + 1) % this.winnerMessages.length;
+      }, 3000);
+    },
+    addNewWinner() {
+      const names = [
+        "Chris J.",
+        "Mia K.",
+        "Daniel S.",
+        "Sophia L.",
+        "James B.",
+      ];
+      const games = ["Slots", "Poker", "Roulette", "Blackjack", "Baccarat"];
+
+      const newWinner = {
+        name: names[Math.floor(Math.random() * names.length)],
+        amount: Math.floor(Math.random() * 10000) + 1000,
+        game: games[Math.floor(Math.random() * games.length)],
+      };
+
+      // Add to recent winners (limit to 5)
+      this.recentWinners.unshift(newWinner);
+      if (this.recentWinners.length > 5) {
+        this.recentWinners.pop();
+      }
+
+      // Also add to rotating messages
+      this.winnerMessages.push(newWinner);
+    },
+    updateWinnerMessages(messages) {
+      this.winnerMessages = messages;
+      this.currentMessageIndex = 0;
     },
   },
 };
@@ -1585,5 +1688,132 @@ body {
 
 .retry-button:hover {
   background-color: #d32f2f;
+}
+.container {
+  max-width: 800px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 15px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.casino-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 10px;
+  border: 1px solid gold;
+  margin-bottom: 30px;
+}
+
+.winner-messages {
+  position: relative;
+  /* padding: 12px 20px; */
+  background: linear-gradient(
+    90deg,
+    rgba(255, 215, 0, 0.2),
+    rgba(255, 215, 0, 0.1)
+  );
+  border-radius: 8px;
+  width: 100%;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.winner-message {
+  position: absolute;
+  width: 100%;
+  left: 0;
+  padding: 0 20px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.5s ease;
+}
+
+.winner-message.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.winner-icon {
+  color: gold;
+  margin-right: 8px;
+  font-size: 1.2em;
+}
+
+.winner-name {
+  color: #ffdd00;
+  font-weight: bold;
+}
+
+.amount {
+  color: #00ff00;
+  font-weight: bold;
+}
+
+.recent-winners {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.winner-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 6px;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.section-title {
+  text-align: center;
+  margin-bottom: 20px;
+  color: gold;
+  font-size: 28px;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.instructions {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.instructions h3 {
+  color: gold;
+  margin-bottom: 10px;
+}
+
+.instructions ul {
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.instructions li {
+  margin-bottom: 8px;
 }
 </style>
