@@ -485,7 +485,10 @@ export default {
     if (!token) {
       token = "guest_" + Math.random().toString(36).substring(2, 10);
     }
-    this.connectWebSocket("ws://127.0.0.1:8787/websocket", token);
+    this.connectWebSocket(
+      "wss://websocket-hibernation-server.credosaffi.workers.dev/websocket",
+      token
+    );
 
     // track connection state reactively
     this.unwatch = this.$watch(
