@@ -8,6 +8,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.0.0",
     "canvas-confetti": "^1.9.3",
     "core-js": "^3.8.3",
     "vue": "^3.2.13",

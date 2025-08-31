@@ -485,10 +485,7 @@ export default {
     if (!token) {
       token = "guest_" + Math.random().toString(36).substring(2, 10);
     }
-    this.connectWebSocket(
-      "wss://websocket-hibernation-server.credosaffi.workers.dev/websocket",
-      token
-    );
+    this.connectWebSocket("ws://127.0.0.1:8787/websocket", token);
 
     // track connection state reactively
     this.unwatch = this.$watch(
@@ -791,6 +788,8 @@ export default {
 
       this.mobileError = "";
       this.isSendingOTP = true;
+
+      this.mobileNumber = "254" + this.mobileNumber.slice(-9);
 
       try {
         // Use the Vue-safe WebSocket sendMessage
