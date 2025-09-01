@@ -529,10 +529,10 @@ export default {
       if (payload.success) {
         this.otpSuccess = "OTP verified successfully!";
         saveToken(payload.token, 3600);
-        // this.reconnectWebSocket(
-        //   "wss://websocket-hibernation-server.credosaffi.workers.dev/websocket",
-        //   payload.token
-        // );
+        this.reconnectWebSocket(
+          "wss://websocket-hibernation-server.credosaffi.workers.dev/websocket",
+          payload.token
+        );
         this.remountApp();
 
         setTimeout(() => {
