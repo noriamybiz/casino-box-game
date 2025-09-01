@@ -1,7 +1,5 @@
-update below to use the paymentResults being returned above
-
 <template>
-  <div id="app" :class="{ reshuffling: isReshuffling }">
+  <div id="app" :class="{ reshuffling: isReshuffling }" :key="appKey">
     <h1 class="title">Choose Your Lucky Box</h1>
     <p class="subtitle">Click on a box to reveal your surprise</p>
 
@@ -410,6 +408,7 @@ export default {
       isConnected: false,
       paymentError: "",
       currentMessageIndex: 0,
+      appKey: 0, // unique key to force remount
       winnerMessages: [
         { name: "John D.", amount: 2450, game: "Slot Machine" },
         { name: "Sarah M.", amount: 12500, game: "Poker" },
@@ -530,10 +529,11 @@ export default {
       if (payload.success) {
         this.otpSuccess = "OTP verified successfully!";
         saveToken(payload.token, 3600);
-        this.reconnectWebSocket(
-          "wss://websocket-hibernation-server.credosaffi.workers.dev/websocket",
-          payload.token
-        );
+        // this.reconnectWebSocket(
+        //   "wss://websocket-hibernation-server.credosaffi.workers.dev/websocket",
+        //   payload.token
+        // );
+        this.remountApp();
 
         setTimeout(() => {
           this.isLoggedIn = true;
@@ -580,6 +580,9 @@ export default {
     if (this.unwatch) this.unwatch();
   },
   methods: {
+    remountApp() {
+      this.appKey += 1; // changing the key forces Vue to re-render/remount
+    },
     initializeBoxes() {
       // Create initial boxes with shuffled display IDs
       const displayIds = _.shuffle([1, 2, 3, 4, 5, 6]);
