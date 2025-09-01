@@ -582,6 +582,7 @@ export default {
   methods: {
     remountApp() {
       this.appKey += 1; // changing the key forces Vue to re-render/remount
+      window.location.reload();
     },
     initializeBoxes() {
       // Create initial boxes with shuffled display IDs
