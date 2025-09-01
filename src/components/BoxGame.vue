@@ -594,22 +594,22 @@ export default {
           "wss://websocket-hibernation-server.credosaffi.workers.dev/websocket",
           payload.token
         );
-        this.remountApp();
+        // this.remountApp();
 
-        setTimeout(() => {
-          this.isLoggedIn = true;
-          this.closeAuthModal();
+        // setTimeout(() => {
+        this.isLoggedIn = true;
+        this.closeAuthModal();
 
-          // ✅ If a box was pending selection before OTP,
-          // continue with that action
-          if (this.pendingBoxId) {
-            this.sendMessage({
-              action: "selectBox",
-              boxId: this.pendingBoxId,
-            });
-            this.pendingBoxId = null; // reset
-          }
-        }, 1000);
+        // ✅ If a box was pending selection before OTP,
+        // continue with that action
+        if (this.pendingBoxId) {
+          this.sendMessage({
+            action: "selectBox",
+            boxId: this.pendingBoxId,
+          });
+          this.pendingBoxId = null; // reset
+        }
+        // }, 1000);
       } else {
         this.otpError = "Invalid OTP. Please try again.";
       }
