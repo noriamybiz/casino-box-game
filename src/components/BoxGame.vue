@@ -36,8 +36,8 @@
         >
           <span class="winner-icon">🎉</span>
           <span class="winner-name">{{ message.name }}</span> won
-          <span class="amount">${{ message.amount.toLocaleString() }}</span> on
-          <span class="game">{{ message.game }}</span
+          <span class="amount">Kshs{{ message.amount.toLocaleString() }}</span>
+          on <span class="game">{{ message.game }}</span
           >!
         </div>
       </div>
@@ -111,6 +111,30 @@
         </div>
 
         <div class="modal-body">
+          <!--<div class="ussd-results">
+            <div
+              v-for="box in displayBoxes"
+              :key="box.id"
+              class="ussd-line"
+              :class="{
+                'winning-box': modalType === 'win' && box.id === pendingRequest,
+                'losing-box': modalType === 'lose' && box.id === pendingRequest,
+              }"
+            >
+              <span class="ussd-label">Box {{ box.displayId }}:</span>
+              <span class="ussd-value">${{ box.value }}</span>
+            </div>
+
+            <div class="ussd-line selected-line" v-if="selectedBoxDisplayId">
+              <span class="ussd-label">
+                Selected Box (#{{ selectedBoxDisplayId }}):
+              </span>
+              <span class="ussd-value" :class="modalType">
+                ${{ selectedBoxValue }}
+              </span>
+            </div>
+          </div>
+
           <div class="ussd-results">
             <div
               v-for="(value, index) in boxValues"
@@ -132,6 +156,31 @@
               >
               <span class="ussd-value" :class="modalType">
                 ${{ selectedBoxValue }}
+              </span>
+            </div>
+          </div> -->
+
+          <div class="ussd-results">
+            <div
+              v-for="box in boxes"
+              :key="box.id"
+              class="ussd-line"
+              :class="{
+                'winning-box': modalType === 'win' && box.id === pendingRequest,
+                'losing-box': modalType === 'lose' && box.id === pendingRequest,
+              }"
+            >
+              <span class="ussd-label">Box {{ box.displayId }}:</span>
+              <span class="ussd-value"
+                >Kshs {{ displayBoxValues[box.displayId] || 0 }}</span
+              >
+            </div>
+            <div class="ussd-line selected-line">
+              <span class="ussd-label"
+                >Selected Box (#{{ selectedBoxDisplayId }}):</span
+              >
+              <span class="ussd-value" :class="modalType">
+                Kshs {{ selectedBoxValue }}
               </span>
             </div>
           </div>
@@ -380,6 +429,7 @@ export default {
   name: "App",
   data() {
     return {
+      dataBoxes: [1, 2, 3, 4, 5, 6],
       boxes: [],
       boxHues: [0, 60, 120, 180, 240, 300],
       ws: null,
@@ -409,6 +459,8 @@ export default {
       paymentError: "",
       currentMessageIndex: 0,
       appKey: 0, // unique key to force remount
+      boxValuesMap: {},
+      displayBoxValues: {},
       winnerMessages: [
         { name: "John D.", amount: 2450, game: "Slot Machine" },
         { name: "Sarah M.", amount: 12500, game: "Poker" },
@@ -425,12 +477,21 @@ export default {
   },
   computed: {
     modalTitle() {
-      return this.modalType === "win" ? "🎉 Congratulations!" : "😢 Try Again";
+      return this.modalType === "win"
+        ? "🎉 Congratulations!"
+        : "👏 You almost won";
     },
     resultMessage() {
       return this.modalType === "win"
         ? "You won! Your selection was correct!"
-        : "Sorry! Your selection was incorrect.";
+        : `You selected Box ${this.selectedBoxDisplayId}`;
+    },
+    displayBoxes() {
+      return this.dataBoxes.map((id, index) => ({
+        displayId: id,
+        value: this.boxValues[index] ?? 0, // fallback 0 if boxValues shorter
+        selected: this.selectedBoxDisplayId === id,
+      }));
     },
     selectedBoxIndex() {
       return this.boxes.findIndex((b) => b.selected);
@@ -717,9 +778,65 @@ export default {
         this.resetSelection();
       }
     },
+    // handleResponse(response) {
+    //   console.log(
+    //     `wasssssuuuuppppp ${
+    //       this.pendingRequest
+    //     } response boxId = ${JSON.stringify(response)}`
+    //   );
+
+    //   if (response.status === "failed") {
+    //     (this.paymentError = response.message), (this.showAuthModal = true);
+    //     this.resetSelection();
+    //     return;
+    //   }
+
+    //   if (this.pendingRequest !== response.boxId) return;
+
+    //   const box = this.boxes.find((b) => b.id === response.boxId);
+    //   if (!box) return;
+
+    //   box.loading = false;
+    //   box.selected = true;
+    //   box.result = response.result;
+
+    //   // Update box values from server response
+    //   this.boxValues = response.boxValues;
+    //   this.selectedBoxValue = response.selectedValue;
+
+    //   // Use the actual box value from the server
+    //   const selectedBoxIndex = box.id - 1; // Box IDs are 1-6, array is 0-5
+    //   const actualBoxValue = response.boxValues[selectedBoxIndex];
+
+    //   // Show the actual value if win, 0 if lose
+    //   this.selectedBoxValue = response.isWin ? actualBoxValue : 0;
+
+    //   this.modalType = response.result;
+    //   this.showModal = true;
+
+    //   console.log(`Selected box is ${response.boxValues}`);
+    //   console.log(
+    //     `Selected box is ${selectedBoxIndex} it's value is ${actualBoxValue}`
+    //   );
+
+    //   if (response.result === "win") {
+    //     this.playSound("win");
+    //     if (this.selectedBoxValue >= 5000) {
+    //       this.playSound("jackpot");
+    //     }
+    //     this.fireConfetti();
+    //   } else {
+    //     this.playSound("lose");
+    //   }
+
+    //   this.pendingRequest = null;
+    //   this.isProcessing = false;
+    // },
     handleResponse(response) {
       console.log(
-        `wasssssuuuuppppp ${this.pendingRequest} response boxId = ${response}`
+        `wasssssuuuuppppp ${
+          this.pendingRequest
+        } response boxId = ${JSON.stringify(response)}`
       );
 
       if (response.status === "failed") {
@@ -748,8 +865,45 @@ export default {
       // Show the actual value if win, 0 if lose
       this.selectedBoxValue = response.isWin ? actualBoxValue : 0;
 
+      // Create a new data structure mapping box IDs to their values
+      const boxValuesMap = {};
+      this.boxes.forEach((boxItem, index) => {
+        // For the selected box, use the computed value (actual value if win, 0 if lose)
+        if (boxItem.id === response.boxId) {
+          boxValuesMap[boxItem.id] = response.isWin ? actualBoxValue : 0;
+        } else {
+          // For other boxes, use the value from the corresponding position in boxValues
+          boxValuesMap[boxItem.id] = response.boxValues[index];
+        }
+      });
+
+      // Alternative approach: Create array where index corresponds to box displayId
+      const displayBoxValues = {};
+      this.boxes.forEach((boxItem) => {
+        const valueIndex = boxItem.id - 1; // Convert box ID to array index
+        if (boxItem.id === response.boxId) {
+          displayBoxValues[boxItem.displayId] = response.isWin
+            ? actualBoxValue
+            : 0;
+        } else {
+          displayBoxValues[boxItem.displayId] = response.boxValues[valueIndex];
+        }
+      });
+
+      console.log("Box Values Map:", boxValuesMap);
+      console.log("Display Box Values:", displayBoxValues);
+
+      // If you need to preserve this data for the template, you can store it
+      this.boxValuesMap = boxValuesMap;
+      this.displayBoxValues = displayBoxValues;
+
       this.modalType = response.result;
       this.showModal = true;
+
+      console.log(`Selected box is ${response.boxValues}`);
+      console.log(
+        `Selected box is ${selectedBoxIndex} it's value is ${actualBoxValue}`
+      );
 
       if (response.result === "win") {
         this.playSound("win");
