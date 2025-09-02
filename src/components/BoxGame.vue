@@ -536,6 +536,7 @@ export default {
       addListener,
       isConnected,
       reconnectWebSocket,
+      waitForConnection,
     } = webSocket();
 
     // save for later use in methods
@@ -544,6 +545,7 @@ export default {
     this.addListener = addListener;
     this.isConnectedRef = isConnected;
     this.reconnectWebSocket = reconnectWebSocket;
+    this.waitForConnection = waitForConnection;
   },
   mounted() {
     let token = getToken();
