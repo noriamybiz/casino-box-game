@@ -628,6 +628,7 @@ export default {
 
             this.pendingBoxId = null;
           }
+          this.remountApp();
         } catch (err) {
           this.otpError = "Failed to reconnect. Please try again.";
           console.error("Reconnection error:", err);
