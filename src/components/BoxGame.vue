@@ -422,7 +422,12 @@
 import confetti from "canvas-confetti";
 import { GetProvider } from "@/utils/validateMobileNumber.js";
 import { webSocket } from "@/utils/webSocket";
-import { saveToken, getToken } from "@/utils/authStorage";
+import {
+  saveToken,
+  getToken,
+  saveBoxSelection,
+  getLastBoxSelection,
+} from "@/utils/authStorage";
 import _ from "lodash";
 
 export default {
@@ -584,36 +589,123 @@ export default {
       this.handleResponse(payload);
     });
 
-    this.addListener("otpVerified", (payload) => {
-      console.error("otpVerified", payload);
+    this.addListener("otpVerified", async (payload) => {
+      console.log("otpVerified", payload);
       this.isVerifyingOTP = false;
+
       if (payload.success) {
         this.otpSuccess = "OTP verified successfully!";
         saveToken(payload.token, 3600);
-        this.reconnectWebSocket(
-          "wss://websocket-hibernation-server.credosaffi.workers.dev/websocket",
-          payload.token
-        );
-        // this.remountApp();
 
-        // setTimeout(() => {
-        this.isLoggedIn = true;
-        this.closeAuthModal();
+        this.isProcessing = true;
 
-        // ✅ If a box was pending selection before OTP,
-        // continue with that action
-        if (this.pendingBoxId) {
-          this.sendMessage({
-            action: "selectBox",
-            boxId: this.pendingBoxId,
-          });
-          this.pendingBoxId = null; // reset
+        try {
+          // Reconnect WebSocket and wait for connection
+          await this.reconnectWebSocket(
+            "wss://websocket-hibernation-server.credosaffi.workers.dev/websocket",
+            payload.token
+          );
+
+          // Wait for connection to be fully established
+          await this.waitForConnection(3000);
+
+          // ✅ Now WebSocket should be available
+          this.isLoggedIn = true;
+          this.closeAuthModal();
+
+          const lastSelection = getLastBoxSelection();
+
+          if (lastSelection) {
+            console.log(`BoxId is ${lastSelection.boxId}`);
+
+            // Send the message - it should work now
+            this.sendMessage({
+              action: "selectBox",
+              boxId: lastSelection.boxId,
+            });
+
+            this.pendingBoxId = null;
+          }
+        } catch (err) {
+          this.otpError = "Failed to reconnect. Please try again.";
+          console.error("Reconnection error:", err);
+        } finally {
+          this.isProcessing = false;
         }
-        // }, 1000);
       } else {
         this.otpError = "Invalid OTP. Please try again.";
       }
     });
+    // this.addListener("otpVerified", async (payload) => {
+    //   console.error("otpVerified", payload);
+    //   this.isVerifyingOTP = false;
+
+    //   if (payload.success) {
+    //     this.otpSuccess = "OTP verified successfully!";
+    //     saveToken(payload.token, 3600);
+
+    //     this.isProcessing = true;
+
+    //     try {
+    //       await this.reconnectWebSocket(
+    //         "wss://websocket-hibernation-server.credosaffi.workers.dev/websocket",
+    //         payload.token
+    //       );
+
+    //       // ✅ only runs after reconnection is complete
+    //       this.isLoggedIn = true;
+    //       this.closeAuthModal();
+
+    //       const lastSelection = getLastBoxSelection();
+
+    //       console.log(`BoxId is ${lastSelection.boxId}`);
+
+    //       if (lastSelection) {
+    //         this.sendMessage({
+    //           action: "selectBox",
+    //           boxId: lastSelection.boxId,
+    //         });
+    //         this.pendingBoxId = null;
+    //       }
+    //     } catch (err) {
+    //       this.otpError = "Failed to reconnect. Please try again.";
+    //       console.error(err);
+    //     }
+    //   } else {
+    //     this.otpError = "Invalid OTP. Please try again.";
+    //   }
+    // });
+
+    // this.addListener("otpVerified", (payload) => {
+    //   console.error("otpVerified", payload);
+    //   this.isVerifyingOTP = false;
+    //   if (payload.success) {
+    //     this.otpSuccess = "OTP verified successfully!";
+    //     saveToken(payload.token, 3600);
+    //     this.reconnectWebSocket(
+    //       "wss://websocket-hibernation-server.credosaffi.workers.dev/websocket",
+    //       payload.token
+    //     );
+    //     // this.remountApp();
+
+    //     // setTimeout(() => {
+    //     this.isLoggedIn = true;
+    //     this.closeAuthModal();
+
+    //     // ✅ If a box was pending selection before OTP,
+    //     // continue with that action
+    //     if (this.pendingBoxId) {
+    //       this.sendMessage({
+    //         action: "selectBox",
+    //         boxId: this.pendingBoxId,
+    //       });
+    //       this.pendingBoxId = null; // reset
+    //     }
+    //     // }, 1000);
+    //   } else {
+    //     this.otpError = "Invalid OTP. Please try again.";
+    //   }
+    // });
 
     this.addListener("Unauthorized", (payload) => {
       console.error("Unauthorized:", payload);
@@ -739,10 +831,14 @@ export default {
     // },
     handleBoxClick: _.debounce(
       function (boxId) {
+        console.log("sjsjsjsjsjsjsj");
+        saveBoxSelection(boxId);
         if (this.isProcessing || this.isReshuffling) return;
         if (!this.isLoggedIn) {
           // Store the box ID and show auth modal
+          console.log("sjsjsjsjsjsjsj llllllllllllll");
           this.pendingBoxId = boxId;
+          saveBoxSelection(boxId);
           this.showAuthModal = true;
           return;
         }
